@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>はんばい がくしゅう レジ</title>
+<title>レジアプリ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
@@ -22,7 +22,7 @@
     --danger:#C0503F;
     --radius:18px;
   }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
   html,body{
     margin:0; padding:0; height:100%;
     background:var(--bg); color:var(--ink);
@@ -33,6 +33,12 @@
     overscroll-behavior:none;
   }
   input, textarea{ -webkit-user-select:text; user-select:text; }
+  /* 値札の画像だけは長押しメニュー（写真に追加など）を使えるようにする */
+  #label-preview-img{
+    -webkit-touch-callout:default;
+    -webkit-user-select:auto; user-select:auto;
+    touch-action:auto;
+  }
   button{ font-family:inherit; }
   ruby rt{ font-size:0.55em; color:var(--sub); }
 
@@ -257,7 +263,7 @@
 <!-- ============ タイトル画面 ============ -->
 <div id="screen-title" class="screen active">
   <div class="title-screen">
-    <h1><ruby>販売<rt>はんばい</rt></ruby><ruby>学習<rt>がくしゅう</rt></ruby>レジ</h1>
+    <h1>レジアプリ</h1>
     <p class="explain" style="max-width:480px;">
       しなものを えらんで、レジで<br>
       <ruby>お会計<rt>おかいけい</rt></ruby>の れんしゅうを するよ。
@@ -352,13 +358,14 @@
     <h2>値札（QRコード）の確認・出力</h2>
     <p class="small-note">
       商品一覧の「値札を見る」を押すと、ここにQRコードと商品名・価格だけの値札が表示されます。写真は含まれません。<br>
-      パソコンでは「画像をダウンロード」でファイルとして保存できます。<br>
-      iPhone・iPadでは、Webページの機能から直接「写真」アプリへ保存することができないため、表示された値札の画像を<b>長押しして「写真に追加」を選ぶ</b>と写真アプリに保存できます。「画像をダウンロード」を押した場合はFilesアプリの「ダウンロード」フォルダに保存されます。「画像をコピー」は他の書類などに直接貼り付けたいときにご利用ください。
+      <b>iPhone・iPadで写真アプリに保存する場合</b>は「写真に保存」を押し、出てきたメニューから「画像を保存」を選んでください。表示された値札の画像を長押しして「写真に追加」を選ぶ方法でも保存できます。<br>
+      <b>パソコンの場合</b>は「画像をダウンロード」でファイルとして保存できます（iPhone・iPadではFilesアプリの「ダウンロード」フォルダに保存されます）。「画像をコピー」は他の書類などに直接貼り付けたいときにご利用ください。
     </p>
     <div id="label-preview" style="display:none;">
       <img id="label-preview-img" style="max-width:260px; display:block; margin:0 auto 14px; border-radius:12px; border:2px solid var(--line);">
       <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-        <button class="btn" id="btn-label-download">画像をダウンロード</button>
+        <button class="btn" id="btn-label-share">写真に保存</button>
+        <button class="btn secondary" id="btn-label-download">画像をダウンロード</button>
         <button class="btn secondary" id="btn-label-copy">画像をコピー</button>
       </div>
       <p class="small-note" id="label-copy-note" style="text-align:center; margin-top:8px;"></p>
@@ -1226,6 +1233,24 @@ async function showLabelPreview(id){
   document.getElementById('label-copy-note').textContent = '';
   document.getElementById('label-preview').scrollIntoView({behavior:'smooth', block:'center'});
 }
+document.getElementById('btn-label-share').addEventListener('click', async ()=>{
+  if(!currentLabelCanvas) return;
+  const noteEl = document.getElementById('label-copy-note');
+  noteEl.textContent = '';
+  try{
+    const blob = await canvasToBlob(currentLabelCanvas);
+    const file = new File([blob], `nefuda_${currentLabelProductName}.png`, { type:'image/png' });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file] });
+      // 共有シートが開けば、そこから「画像を保存」で写真アプリに保存できる
+      return;
+    }
+    noteEl.textContent = 'この端末では共有メニューを開けませんでした。表示された画像を長押しして「写真に追加」を選んでください。';
+  }catch(e){
+    if(e && e.name === 'AbortError') return; // ユーザーが共有をキャンセルした場合
+    noteEl.textContent = '共有メニューを開けませんでした。表示された画像を長押しして「写真に追加」を選んでください。';
+  }
+});
 document.getElementById('btn-label-download').addEventListener('click', async ()=>{
   if(!currentLabelCanvas) return;
   const blob = await canvasToBlob(currentLabelCanvas);
@@ -1574,6 +1599,15 @@ document.getElementById('btn-next-customer').addEventListener('click', ()=>{
 });
 
 /* ===================== 初期化 ===================== */
+/* --- ダブルタップによる拡大を防ぐ ---
+   拡大の抑止は CSS の touch-action:manipulation で行う。
+   touchend を preventDefault すると商品の連続タップまで効かなくなるため使わない。 */
+(function preventUnintendedZoom(){
+  // 2本指などによる意図しない拡大を防ぐ
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+  document.addEventListener('gesturechange', function(e){ e.preventDefault(); });
+})();
+
 function init(){
   loadState();
   renderProductList();
