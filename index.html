@@ -497,7 +497,8 @@ let state = {
   receivedHistory: [],
   qrStream: null,
   qrScanning: false,
-  lastScanTime: 0
+  lastScanTime: 0,
+  lastAddedId: null
 };
 
 function loadState(){
@@ -1321,7 +1322,10 @@ function changeCartQty(id, delta){
   setCartQty(id, Math.max(0, cur + delta));
 }
 function setCartQty(id, qty){
-  if(qty <= 0){ delete state.cart[id]; }
+  if(qty <= 0){
+    delete state.cart[id];
+    if(state.lastAddedId === id) state.lastAddedId = null;
+  }
   else{ state.cart[id] = qty; }
   renderRegisterProducts();
   renderCart();
@@ -1347,21 +1351,19 @@ function renderCart(){
       const qty = state.cart[id];
       const row = document.createElement('div');
       row.className = 'cart-item';
-      row.innerHTML = `<span>${escapeHtml(p.name)} × ${qty}</span><span style="display:flex; align-items:center; gap:10px;">${yen(p.price*qty)}<button type="button" class="navbtn" data-remove-item="${id}" style="padding:6px 10px; font-size:13px; min-height:36px;">これを けす</button></span>`;
+      row.innerHTML = `<span>${escapeHtml(p.name)} × ${qty}</span><span style="display:flex; align-items:center; gap:10px;">${yen(p.price*qty)}<button type="button" class="navbtn" data-remove-item="${id}" style="padding:6px 10px; font-size:13px; min-height:36px;">ひとつ けす</button></span>`;
       list.appendChild(row);
     });
     document.getElementById(totalId).textContent = yen(total);
     list.querySelectorAll('[data-remove-item]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        delete state.cart[btn.dataset.removeItem];
-        renderRegisterProducts();
-        renderCart();
+        changeCartQty(btn.dataset.removeItem, -1);
       });
     });
   });
 }
-document.getElementById('btn-clear-cart').addEventListener('click', ()=>{ state.cart={}; renderRegisterProducts(); renderCart(); });
-document.getElementById('btn-clear-cart-qr').addEventListener('click', ()=>{ state.cart={}; renderCart(); });
+document.getElementById('btn-clear-cart').addEventListener('click', ()=>{ state.cart={}; state.lastAddedId=null; renderRegisterProducts(); renderCart(); });
+document.getElementById('btn-clear-cart-qr').addEventListener('click', ()=>{ state.cart={}; state.lastAddedId=null; renderCart(); });
 document.getElementById('btn-to-checkout').addEventListener('click', ()=>goCheckout());
 document.getElementById('btn-to-checkout-qr').addEventListener('click', ()=>goCheckout());
 
@@ -1424,10 +1426,18 @@ function handleQrResult(text){
     state.products.push(product);
     saveProducts();
   }
+  const isSameAsLast = (state.lastAddedId === product.id);
   changeCartQty(product.id, 1);
+  state.lastAddedId = product.id;
   soundAdd();
-  document.getElementById('qr-status').textContent = `「${data.name}」を いれたよ`;
-  showToast(`「${data.name}」を かごに いれたよ`);
+  const statusEl = document.getElementById('qr-status');
+  if(isSameAsLast){
+    statusEl.textContent = 'おなじ しょうひんです';
+    showToast('おなじ しょうひんです');
+  }else{
+    statusEl.textContent = `「${data.name}」を いれたよ`;
+    showToast(`「${data.name}」を かごに いれたよ`);
+  }
   setTimeout(()=>{
     if(state.qrScanning){
       document.getElementById('qr-status').textContent = 'QRコードを カメラに みせてね';
@@ -1445,13 +1455,14 @@ function goCheckout(){
   document.getElementById('btn-next-customer').style.display = 'none';
   showScreen('screen-checkout');
 }
-document.getElementById('btn-tap-back').addEventListener('click', ()=>{ state.cart={}; showScreen('screen-title'); });
-document.getElementById('btn-qr-back').addEventListener('click', ()=>{ state.cart={}; showScreen('screen-title'); });
+document.getElementById('btn-tap-back').addEventListener('click', ()=>{ state.cart={}; state.lastAddedId=null; showScreen('screen-title'); });
+document.getElementById('btn-qr-back').addEventListener('click', ()=>{ state.cart={}; state.lastAddedId=null; showScreen('screen-title'); });
 document.getElementById('btn-checkout-back').addEventListener('click', ()=>{
   showScreen(state.settings.inputMode==='qr' ? 'screen-register-qr' : 'screen-register-tap');
 });
 document.getElementById('btn-goto-register').addEventListener('click', ()=>{
   state.cart = {};
+  state.lastAddedId = null;
   renderRegisterProducts();
   renderCart();
   if(state.settings.inputMode === 'qr'){
@@ -1588,6 +1599,7 @@ document.getElementById('btn-calc').addEventListener('click', ()=>{
 
 document.getElementById('btn-next-customer').addEventListener('click', ()=>{
   state.cart = {};
+  state.lastAddedId = null;
   clearReceived();
   renderRegisterProducts();
   renderCart();
