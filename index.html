@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>はんばい がくしゅう レジ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+  :root{
+    --bg:#FBF7EF;
+    --panel:#FFFFFF;
+    --ink:#3A342A;
+    --sub:#7A7267;
+    --line:#E4DCC9;
+    --accent:#2E8B7A;
+    --accent-dark:#20685C;
+    --accent-soft:#DCF0EA;
+    --warn:#D9822B;
+    --danger:#C0503F;
+    --radius:18px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg); color:var(--ink);
+    font-family:'BIZ UDPGothic', 'Hiragino Maru Gothic ProN', sans-serif;
+    touch-action:manipulation;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+    overscroll-behavior:none;
+  }
+  input, textarea{ -webkit-user-select:text; user-select:text; }
+  button{ font-family:inherit; }
+  ruby rt{ font-size:0.55em; color:var(--sub); }
+
+  .screen{ display:none; min-height:100vh; padding:16px; padding-bottom:40px; }
+  .screen.active{ display:block; }
+
+  .app-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:12px; flex-wrap:wrap; gap:8px;
+  }
+  .app-title{ font-size:22px; font-weight:700; margin:0; }
+  .navbtn{
+    min-height:44px; min-width:44px; padding:8px 16px;
+    border-radius:12px; border:2px solid var(--line);
+    background:var(--panel); color:var(--ink);
+    font-size:15px; font-weight:700; cursor:pointer;
+  }
+  .navbtn:active{ background:var(--accent-soft); }
+
+  .explain{
+    background:var(--accent-soft); border:2px solid var(--accent);
+    border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;
+    font-size:17px; line-height:1.8; color:var(--accent-dark);
+  }
+
+  .card{
+    background:var(--panel); border:2px solid var(--line);
+    border-radius:var(--radius); padding:16px; margin-bottom:16px;
+  }
+  .card h2{ margin:0 0 12px; font-size:18px; }
+
+  .btn{
+    min-height:52px; padding:10px 20px; border-radius:14px;
+    border:none; background:var(--accent); color:#fff;
+    font-size:18px; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:active{ background:var(--accent-dark); }
+  .btn.secondary{ background:var(--panel); color:var(--accent-dark); border:2px solid var(--accent); }
+  .btn.secondary:active{ background:var(--accent-soft); }
+  .btn.warn{ background:var(--warn); }
+  .btn.danger{ background:var(--danger); }
+  .btn.big{ font-size:24px; padding:20px 32px; min-height:72px; width:100%; }
+  .btn:disabled{ opacity:0.45; }
+
+  .title-screen{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:92vh; text-align:center; gap:22px; }
+  .title-screen h1{ font-size:34px; margin:0; }
+  .title-buttons{ display:flex; flex-direction:column; gap:16px; width:min(420px,90vw); }
+
+  .stepper{ display:flex; align-items:center; gap:8px; }
+  .stepper button{
+    width:48px; height:48px; border-radius:12px; border:2px solid var(--accent);
+    background:#fff; color:var(--accent-dark); font-size:24px; font-weight:700; cursor:pointer;
+  }
+  .stepper button:active{ background:var(--accent-soft); }
+  .stepper input{
+    width:80px; height:48px; text-align:center; font-size:20px;
+    border:2px solid var(--line); border-radius:12px; background:#fff; color:var(--ink);
+  }
+
+  .color-swatches{ display:flex; flex-wrap:wrap; gap:10px; }
+  .swatch{
+    width:52px; height:52px; border-radius:50%; border:3px solid transparent;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .swatch.selected{ border-color:var(--ink); }
+
+  .product-row{
+    display:flex; align-items:center; gap:12px; padding:10px;
+    border:2px solid var(--line); border-radius:14px; margin-bottom:10px; background:#fff;
+  }
+  .product-row img.thumb, .thumb-placeholder{
+    width:60px; height:60px; border-radius:12px; object-fit:cover; background:#f1ede2; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--sub);
+  }
+  .product-row .info{ flex:1; min-width:0; }
+  .product-row .info b{ font-size:16px; }
+  .product-row .actions{ display:flex; gap:6px; flex-wrap:wrap; }
+  .product-row .actions .navbtn{ padding:6px 12px; font-size:13px; min-height:40px; }
+
+  .form-grid{ display:flex; flex-direction:column; gap:14px; }
+  .form-field label{ display:block; font-weight:700; margin-bottom:6px; }
+  .form-field input[type=text]{
+    width:100%; padding:12px; font-size:17px; border:2px solid var(--line);
+    border-radius:12px; background:#fff; color:var(--ink);
+  }
+  .form-field input[type=file]{ font-size:14px; }
+
+  .setting-toggle{ display:flex; gap:10px; flex-wrap:wrap; }
+  .toggle-opt{
+    flex:1; min-width:150px; min-height:52px; border-radius:14px; border:2px solid var(--line);
+    background:#fff; color:var(--ink); font-size:16px; font-weight:700; cursor:pointer; padding:10px;
+  }
+  .toggle-opt.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  .register-layout{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .product-grid{ flex:2; min-width:280px; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+  .product-card{
+    background:#fff; border:2px solid var(--line); border-radius:var(--radius);
+    padding:10px; display:flex; flex-direction:column; gap:8px; position:relative;
+  }
+  .product-photo-wrap{
+    position:relative; border-radius:14px; overflow:hidden; cursor:pointer;
+    transition:transform .12s ease; background:#f1ede2; aspect-ratio:1/1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .product-photo-wrap:active{ transform:scale(0.94); }
+  .product-photo-wrap img{ width:100%; height:100%; object-fit:cover; }
+  .sticker{
+    position:absolute; top:6px; left:6px; width:26px; height:26px; border-radius:50%;
+    border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,0.15);
+  }
+  .qty-badge{
+    position:absolute; top:6px; right:6px; min-width:26px; height:26px; border-radius:13px;
+    background:var(--accent); color:#fff; font-weight:700; font-size:14px;
+    display:flex; align-items:center; justify-content:center; padding:0 6px;
+  }
+  .price-tag{ font-size:20px; font-weight:700; text-align:center; }
+  .product-name{ font-size:14px; text-align:center; color:var(--sub); }
+
+  .cart-panel{ flex:1; min-width:260px; background:#fff; border:2px solid var(--line); border-radius:var(--radius); padding:14px; position:sticky; top:16px; }
+  .cart-item{ display:flex; justify-content:space-between; font-size:15px; padding:6px 0; border-bottom:1px solid var(--line); }
+  .cart-total{ display:flex; justify-content:space-between; font-size:22px; font-weight:700; margin-top:10px; padding-top:10px; border-top:3px solid var(--accent); }
+
+  .qr-video-wrap{ background:#000; border-radius:var(--radius); overflow:hidden; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; position:relative; }
+  .qr-video-wrap video{ width:100%; height:100%; object-fit:cover; }
+  .qr-status{ text-align:center; font-size:18px; margin-top:10px; font-weight:700; color:var(--accent-dark); min-height:28px; }
+
+  .customer-total-box{
+    background:var(--accent); color:#fff; border-radius:var(--radius); padding:26px; text-align:center; margin-bottom:18px;
+  }
+  .customer-total-box .label{ font-size:16px; opacity:0.9; }
+  .customer-total-box .amount{ font-size:52px; font-weight:700; margin-top:4px; }
+
+  .denom-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+  .denom-btn{
+    min-height:56px; border-radius:14px; border:2px solid var(--accent); background:#fff;
+    color:var(--accent-dark); font-size:17px; font-weight:700; cursor:pointer;
+  }
+  .denom-btn:active{ background:var(--accent-soft); }
+
+  .change-box{ text-align:center; padding:20px; border-radius:var(--radius); margin-top:14px; }
+  .change-box.ok{ background:var(--accent-soft); border:2px solid var(--accent); }
+  .change-box.short{ background:#FBEAE3; border:2px solid var(--warn); }
+  .change-box .amount{ font-size:40px; font-weight:700; margin:6px 0; }
+  .denom-breakdown{ display:flex; flex-direction:column; gap:14px; margin-top:14px; }
+  .denom-breakdown .row-label{ font-size:17px; font-weight:700; text-align:left; margin-bottom:6px; }
+  .denom-breakdown .icon-row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .money-icon{
+    display:flex; align-items:center; justify-content:center; font-weight:700; color:#3A342A;
+    border:2px solid rgba(0,0,0,0.18); box-shadow:1px 2px 0 rgba(0,0,0,0.08);
+  }
+  .money-icon.bill{ width:66px; height:40px; border-radius:8px; font-size:13px; }
+  .money-icon.coin{ width:46px; height:46px; border-radius:50%; font-size:13px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
+    background:var(--accent); color:#fff; padding:14px 22px; border-radius:14px;
+    font-size:17px; font-weight:700; z-index:200; opacity:0; pointer-events:none;
+    transition:opacity .25s ease; box-shadow:0 4px 14px rgba(0,0,0,0.18);
+  }
+  .toast.show{ opacity:1; }
+
+  .checkbox-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .checkbox-row input{ width:26px; height:26px; }
+
+  .small-note{ font-size:13px; color:var(--sub); line-height:1.6; }
+
+  @media (max-width:640px){
+    .register-layout{ flex-direction:column; }
+    .cart-panel{ position:static; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ タイトル画面 ============ -->
+<div id="screen-title" class="screen active">
+  <div class="title-screen">
+    <h1><ruby>販売<rt>はんばい</rt></ruby><ruby>学習<rt>がくしゅう</rt></ruby>レジ</h1>
+    <p class="explain" style="max-width:480px;">
+      しなものを えらんで、レジで<br>
+      <ruby>お会計<rt>おかいけい</rt></ruby>の れんしゅうを するよ。
+    </p>
+    <div class="title-buttons">
+      <button class="btn big" id="btn-goto-register"><ruby>レジ<rt></rt></ruby>を はじめる</button>
+      <button class="btn secondary big" id="btn-goto-settings">先生用の設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 設定画面 ============ -->
+<div id="screen-settings" class="screen">
+  <div class="app-header">
+    <h1 class="app-title">先生用の設定</h1>
+    <button class="navbtn" id="btn-settings-back">タイトルに戻る</button>
+  </div>
+  <div class="explain">
+    ここは教員が使用する設定画面です。商品の追加・編集や、レジの動作設定を行うことができます。
+  </div>
+
+  <div class="card">
+    <h2>商品一覧</h2>
+    <div id="product-list"></div>
+    <button class="btn" id="btn-add-product">＋ 商品を追加する</button>
+  </div>
+
+  <div class="card" id="product-form-card" style="display:none;">
+    <h2 id="product-form-title">商品を追加する</h2>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>商品名</label>
+        <input type="text" id="pf-name" placeholder="例：おにぎり">
+      </div>
+      <div class="form-field">
+        <label>価格（円）</label>
+        <div class="stepper">
+          <button type="button" id="pf-price-down">－</button>
+          <input type="text" inputmode="numeric" id="pf-price" value="100">
+          <button type="button" id="pf-price-up">＋</button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>シールの色</label>
+        <div class="color-swatches" id="pf-colors"></div>
+      </div>
+      <div class="form-field">
+        <label>商品写真（ファイルを選択、またはカメラで撮影）</label>
+        <input type="file" accept="image/*" id="pf-photo">
+        <div style="margin-top:8px;"><img id="pf-photo-preview" style="max-width:120px;max-height:120px;border-radius:12px;display:none;"></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" id="btn-save-product">保存する</button>
+        <button class="btn secondary" id="btn-cancel-product">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>レジの読み取り方式</h2>
+    <div class="setting-toggle">
+      <button class="toggle-opt" id="opt-mode-tap">タップ方式のみ</button>
+      <button class="toggle-opt" id="opt-mode-qr">QRコードを読み取る</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>お釣りの表示方法</h2>
+    <div class="setting-toggle">
+      <button class="toggle-opt" id="opt-level-1">金額のみ表示</button>
+      <button class="toggle-opt" id="opt-level-2">硬貨・紙幣の枚数で表示</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>効果音の設定</h2>
+    <div class="setting-toggle">
+      <button class="toggle-opt" id="opt-sound-on">音 ON</button>
+      <button class="toggle-opt" id="opt-sound-off">音 OFF</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>値札（QRコード）をPNGで出力</h2>
+    <p class="small-note">
+      商品ごとに、QRコードと商品名・価格だけを配置した画像（PNG）を作成します。写真は含まれません。<br>
+      パソコンに転送して印刷できます。複数選択してまとめてダウンロードできますが、うまくいかない場合は各商品の「値札PNG」ボタンから1枚ずつダウンロードしてください。
+    </p>
+    <div id="label-checklist"></div>
+    <button class="btn" id="btn-download-labels">選択した値札をダウンロード</button>
+  </div>
+</div>
+
+<!-- ============ レジ打ち画面（タップ） ============ -->
+<div id="screen-register-tap" class="screen">
+  <div class="app-header">
+    <h1 class="app-title">レジ</h1>
+    <button class="navbtn" id="btn-tap-back">はじめから</button>
+  </div>
+  <div class="explain">
+    しなものの しゃしんを おすと、かごに はいるよ。<br>
+    かずは ばんごうを タップしても、なんかい おしても きめられるよ。
+  </div>
+  <div class="register-layout">
+    <div class="product-grid" id="tap-product-grid"></div>
+    <div class="cart-panel">
+      <h2 style="margin-top:0;">かごの なか</h2>
+      <div id="cart-items"></div>
+      <div class="cart-total"><span>ごうけい</span><span id="cart-total-amount">0円</span></div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+        <button class="btn big" id="btn-to-checkout">これで おかいけい</button>
+        <button class="btn secondary" id="btn-clear-cart">ぜんぶ けす</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ レジ打ち画面（QR） ============ -->
+<div id="screen-register-qr" class="screen">
+  <div class="app-header">
+    <h1 class="app-title">レジ（QRコード）</h1>
+    <button class="navbtn" id="btn-qr-back">はじめから</button>
+  </div>
+  <div class="explain">
+    しなものの QRコードを カメラに みせてね。<br>
+    じどうで かごに はいるよ。
+  </div>
+  <div class="register-layout">
+    <div style="flex:1; min-width:280px;">
+      <div class="qr-video-wrap"><video id="qr-video" playsinline muted></video></div>
+      <div class="qr-status" id="qr-status">カメラを じゅんびして いるよ…</div>
+      <button class="btn secondary" id="btn-qr-start" style="width:100%; margin-top:10px;">カメラを はじめる</button>
+    </div>
+    <div class="cart-panel">
+      <h2 style="margin-top:0;">かごの なか</h2>
+      <div id="cart-items-qr"></div>
+      <div class="cart-total"><span>ごうけい</span><span id="cart-total-amount-qr">0円</span></div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+        <button class="btn big" id="btn-to-checkout-qr">これで おかいけい</button>
+        <button class="btn secondary" id="btn-clear-cart-qr">ぜんぶ けす</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ お会計画面 ============ -->
+<div id="screen-checkout" class="screen">
+  <div class="app-header">
+    <h1 class="app-title"><ruby>お会計<rt>おかいけい</rt></ruby></h1>
+    <button class="navbtn" id="btn-checkout-back">レジに もどる</button>
+  </div>
+  <div class="explain">
+    <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>った おかねを いれて、「けいさん」を おすと おつりが わかるよ。
+  </div>
+
+  <div class="customer-total-box">
+    <div class="label">おきゃくさんへ ごうけいきんがく</div>
+    <div class="amount" id="checkout-total">0円</div>
+  </div>
+
+  <div class="card">
+    <h2><ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>った おかね</h2>
+    <div class="stepper">
+      <button type="button" id="received-down">－</button>
+      <input type="text" inputmode="numeric" id="received-input" value="0">
+      <button type="button" id="received-up">＋</button>
+    </div>
+    <div class="denom-grid" id="denom-grid"></div>
+    <button class="btn secondary" id="btn-received-clear" style="margin-top:10px; width:100%;">うけとった おかねを けす</button>
+  </div>
+
+  <button class="btn big" id="btn-calc" style="margin-top:6px;">けいさん</button>
+
+  <div id="change-result"></div>
+
+  <button class="btn secondary big" id="btn-next-customer" style="margin-top:16px; display:none;">つぎの おきゃくさん</button>
+</div>
+
+<canvas id="hidden-canvas" style="display:none;"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ===================== データ・保存 ===================== */
+const STORAGE_KEY_PRODUCTS = 'pos_products_v1';
+const STORAGE_KEY_SETTINGS = 'pos_settings_v1';
+let storageOk = true;
+
+const DEFAULT_PRODUCTS = [
+  { id:'p1', name:'おにぎり', price:150, color:'#E53935' },
+  { id:'p2', name:'ジュース', price:120, color:'#1E88E5' }
+];
+const DEFAULT_SETTINGS = { inputMode:'qr', changeLevel:1, soundOn:true };
+
+const COLOR_PRESETS = [
+  { name:'あか', hex:'#E53935' },
+  { name:'あお', hex:'#1E88E5' },
+  { name:'きいろ', hex:'#FDD835' },
+  { name:'みどり', hex:'#43A047' },
+  { name:'オレンジ', hex:'#FB8C00' },
+  { name:'むらさき', hex:'#8E24AA' },
+  { name:'ピンク', hex:'#EC407A' },
+  { name:'みずいろ', hex:'#00ACC1' }
+];
+
+let state = {
+  products: [],
+  settings: Object.assign({}, DEFAULT_SETTINGS),
+  cart: {},        // productId -> qty
+  editingId: null, // 編集中の商品ID（nullなら新規）
+  pendingPhoto: null,
+  receivedAmount: 0,
+  qrStream: null,
+  qrScanning: false,
+  lastScanTime: 0
+};
+
+function loadState(){
+  try{
+    const p = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+    const s = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    state.products = p ? JSON.parse(p) : DEFAULT_PRODUCTS.slice();
+    state.settings = s ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(s)) : Object.assign({}, DEFAULT_SETTINGS);
+  }catch(e){
+    storageOk = false;
+    state.products = DEFAULT_PRODUCTS.slice();
+    state.settings = Object.assign({}, DEFAULT_SETTINGS);
+  }
+}
+function saveProducts(){
+  try{ localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(state.products)); }
+  catch(e){ storageOk = false; }
+}
+function saveSettings(){
+  try{ localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(state.settings)); }
+  catch(e){ storageOk = false; }
+}
+
+function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function yen(n){ return n.toLocaleString('ja-JP') + '円'; }
+
+/* ===================== 画面切り替え ===================== */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id !== 'screen-register-qr'){ stopQrCamera(); }
+}
+
+/* ===================== 音（Web Audio） ===================== */
+let audioCtx = null;
+function beep(freq, dur){
+  if(!state.settings.soundOn) return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+  }catch(e){ /* 音が出せない環境は無視 */ }
+}
+function soundTap(){ beep(660, 0.12); }
+function soundAdd(){ beep(880, 0.15); }
+
+/* ===================== トースト ===================== */
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ===================== 画像リサイズ ===================== */
+function resizeImageFile(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDim = 480;
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ===================== 設定画面：商品一覧 ===================== */
+function renderProductList(){
+  const wrap = document.getElementById('product-list');
+  wrap.innerHTML = '';
+  if(state.products.length === 0){
+    wrap.innerHTML = '<p class="small-note">まだ商品が登録されていません。</p>';
+  }
+  state.products.forEach(p=>{
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.innerHTML = `
+      ${p.photo ? `<img class="thumb" src="${p.photo}">` : `<div class="thumb-placeholder">しゃしん なし</div>`}
+      <div class="info">
+        <b>${escapeHtml(p.name)}</b><br>
+        <span style="color:var(--sub)">${yen(p.price)}</span>
+        <span class="sticker" style="position:relative; display:inline-block; top:2px; left:6px; width:16px; height:16px; border-radius:50%; background:${p.color}; border:2px solid #fff; box-shadow:0 0 0 1px #ccc;"></span>
+      </div>
+      <div class="actions">
+        <button class="navbtn" data-edit="${p.id}">編集</button>
+        <button class="navbtn" data-delete="${p.id}">削除</button>
+        <button class="navbtn" data-single-label="${p.id}">値札PNG</button>
+      </div>`;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click', ()=>openProductForm(b.dataset.edit)));
+  wrap.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click', ()=>deleteProduct(b.dataset.delete)));
+  wrap.querySelectorAll('[data-single-label]').forEach(b=>b.addEventListener('click', ()=>downloadSingleLabel(b.dataset.singleLabel)));
+  renderLabelChecklist();
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function deleteProduct(id){
+  const p = state.products.find(x=>x.id===id);
+  if(!p) return;
+  if(!confirm(`「${p.name}」を削除しますか？`)) return;
+  state.products = state.products.filter(x=>x.id!==id);
+  saveProducts();
+  renderProductList();
+  renderRegisterProducts();
+}
+
+/* ===================== 商品フォーム ===================== */
+function renderColorSwatches(selected){
+  const wrap = document.getElementById('pf-colors');
+  wrap.innerHTML = '';
+  COLOR_PRESETS.forEach(c=>{
+    const el = document.createElement('div');
+    el.className = 'swatch' + (c.hex === selected ? ' selected' : '');
+    el.style.background = c.hex;
+    el.title = c.name;
+    el.dataset.hex = c.hex;
+    el.addEventListener('click', ()=>{
+      wrap.querySelectorAll('.swatch').forEach(s=>s.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+    wrap.appendChild(el);
+  });
+}
+
+function openProductForm(id){
+  state.editingId = id || null;
+  state.pendingPhoto = null;
+  const card = document.getElementById('product-form-card');
+  card.style.display = 'block';
+  document.getElementById('product-form-title').textContent = id ? '商品を編集する' : '商品を追加する';
+  const preview = document.getElementById('pf-photo-preview');
+  document.getElementById('pf-photo').value = '';
+
+  if(id){
+    const p = state.products.find(x=>x.id===id);
+    document.getElementById('pf-name').value = p.name;
+    document.getElementById('pf-price').value = p.price;
+    renderColorSwatches(p.color);
+    if(p.photo){ preview.src = p.photo; preview.style.display='block'; state.pendingPhoto = p.photo; }
+    else{ preview.style.display='none'; }
+  }else{
+    document.getElementById('pf-name').value = '';
+    document.getElementById('pf-price').value = 100;
+    renderColorSwatches(COLOR_PRESETS[0].hex);
+    preview.style.display = 'none';
+  }
+  card.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function closeProductForm(){
+  document.getElementById('product-form-card').style.display = 'none';
+  state.editingId = null;
+  state.pendingPhoto = null;
+}
+
+document.getElementById('pf-photo').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const dataUrl = await resizeImageFile(file);
+    state.pendingPhoto = dataUrl;
+    const preview = document.getElementById('pf-photo-preview');
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+  }catch(err){
+    showToast('しゃしんが よみこめなかったよ');
+  }
+});
+
+document.getElementById('pf-price-up').addEventListener('click', ()=>{
+  const inp = document.getElementById('pf-price');
+  inp.value = Math.max(0, (parseInt(inp.value)||0) + 10);
+});
+document.getElementById('pf-price-down').addEventListener('click', ()=>{
+  const inp = document.getElementById('pf-price');
+  inp.value = Math.max(0, (parseInt(inp.value)||0) - 10);
+});
+
+document.getElementById('btn-save-product').addEventListener('click', ()=>{
+  const name = document.getElementById('pf-name').value.trim();
+  const price = Math.max(0, parseInt(document.getElementById('pf-price').value) || 0);
+  const colorEl = document.querySelector('#pf-colors .swatch.selected');
+  const color = colorEl ? colorEl.dataset.hex : COLOR_PRESETS[0].hex;
+  if(!name){ showToast('商品名を入力してください'); return; }
+
+  if(state.editingId){
+    const p = state.products.find(x=>x.id===state.editingId);
+    p.name = name; p.price = price; p.color = color;
+    if(state.pendingPhoto) p.photo = state.pendingPhoto;
+  }else{
+    state.products.push({ id:uid(), name, price, color, photo: state.pendingPhoto || null });
+  }
+  saveProducts();
+  closeProductForm();
+  renderProductList();
+  renderRegisterProducts();
+  showToast('保存しました');
+});
+document.getElementById('btn-cancel-product').addEventListener('click', closeProductForm);
+document.getElementById('btn-add-product').addEventListener('click', ()=>openProductForm(null));
+
+/* ===================== 設定：読み取り方式／おつりレベル／音 ===================== */
+function renderSettingToggles(){
+  setToggle('opt-mode-tap','opt-mode-qr', state.settings.inputMode==='tap');
+  setToggle('opt-level-1','opt-level-2', state.settings.changeLevel===1);
+  setToggle('opt-sound-on','opt-sound-off', state.settings.soundOn===true);
+}
+function setToggle(idA, idB, aActive){
+  document.getElementById(idA).classList.toggle('active', aActive);
+  document.getElementById(idB).classList.toggle('active', !aActive);
+}
+document.getElementById('opt-mode-tap').addEventListener('click', ()=>{ state.settings.inputMode='tap'; saveSettings(); renderSettingToggles(); });
+document.getElementById('opt-mode-qr').addEventListener('click', ()=>{ state.settings.inputMode='qr'; saveSettings(); renderSettingToggles(); });
+document.getElementById('opt-level-1').addEventListener('click', ()=>{ state.settings.changeLevel=1; saveSettings(); renderSettingToggles(); });
+document.getElementById('opt-level-2').addEventListener('click', ()=>{ state.settings.changeLevel=2; saveSettings(); renderSettingToggles(); });
+document.getElementById('opt-sound-on').addEventListener('click', ()=>{ state.settings.soundOn=true; saveSettings(); renderSettingToggles(); });
+document.getElementById('opt-sound-off').addEventListener('click', ()=>{ state.settings.soundOn=false; saveSettings(); renderSettingToggles(); });
+
+/* ===== 自前QRコード生成（バイトモード / 誤り訂正レベルM） ===== */
+var QRGen = (function(){
+  'use strict';
+
+  // --- GF(256) 演算テーブル ---
+  var EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (function(){
+    var x = 1;
+    for(var i=0;i<255;i++){
+      EXP[i] = x;
+      LOG[x] = i;
+      x <<= 1;
+      if(x & 0x100) x ^= 0x11d;
+    }
+    for(var j=255;j<512;j++) EXP[j] = EXP[j-255];
+  })();
+  function gfMul(a,b){ if(a===0||b===0) return 0; return EXP[LOG[a]+LOG[b]]; }
+
+  function rsGeneratorPoly(degree){
+    var poly = [1];
+    for(var i=0;i<degree;i++){
+      var next = new Array(poly.length+1).fill(0);
+      for(var j=0;j<poly.length;j++){
+        next[j] ^= gfMul(poly[j], 1);
+        next[j+1] ^= gfMul(poly[j], EXP[i]);
+      }
+      poly = next;
+    }
+    return poly;
+  }
+  function rsEncode(data, ecLen){
+    var gen = rsGeneratorPoly(ecLen);
+    var res = new Array(ecLen).fill(0);
+    for(var i=0;i<data.length;i++){
+      var factor = data[i] ^ res[0];
+      res.shift();
+      res.push(0);
+      for(var j=0;j<ecLen;j++){
+        res[j] ^= gfMul(gen[j+1], factor);
+      }
+    }
+    return res;
+  }
+
+  // --- 各バージョンの容量表（レベルM、バイトモード） ---
+  // [version]: {totalCodewords, ecPerBlock, group1Blocks, group1Size, group2Blocks, group2Size}
+  var VERSION_M = {
+    1:  {ec:10, g1:1, s1:16,  g2:0, s2:0},
+    2:  {ec:16, g1:1, s1:28,  g2:0, s2:0},
+    3:  {ec:26, g1:1, s1:44,  g2:0, s2:0},
+    4:  {ec:18, g1:2, s1:32,  g2:0, s2:0},
+    5:  {ec:24, g1:2, s1:43,  g2:0, s2:0},
+    6:  {ec:16, g1:4, s1:27,  g2:0, s2:0},
+    7:  {ec:18, g1:4, s1:31,  g2:0, s2:0},
+    8:  {ec:22, g1:2, s1:38,  g2:2, s2:39},
+    9:  {ec:22, g1:3, s1:36,  g2:2, s2:37},
+    10: {ec:26, g1:4, s1:43,  g2:1, s2:44}
+  };
+  // 各バージョンの総コードワード数（データ+EC）
+  var TOTAL_CW = {1:26,2:44,3:70,4:100,5:134,6:172,7:196,8:242,9:292,10:346};
+
+  // 位置合わせパターン中心座標
+  var ALIGN_POS = {
+    1:[], 2:[6,18], 3:[6,22], 4:[6,26], 5:[6,30],
+    6:[6,34], 7:[6,22,38], 8:[6,24,42], 9:[6,26,46], 10:[6,28,50]
+  };
+
+  function dataCapacity(ver){
+    var v = VERSION_M[ver];
+    return v.g1*v.s1 + v.g2*v.s2;
+  }
+
+  function chooseVersion(byteLen){
+    for(var v=1; v<=10; v++){
+      var capacity = dataCapacity(v);
+      var cciBits = (v <= 9) ? 8 : 16;
+      var neededBits = 4 + cciBits + byteLen*8;
+      if(neededBits <= capacity*8) return v;
+    }
+    throw new Error('データが大きすぎます');
+  }
+
+  // --- ビットバッファ ---
+  function BitBuffer(){ this.bits = []; }
+  BitBuffer.prototype.put = function(value, length){
+    for(var i=length-1;i>=0;i--){ this.bits.push((value >>> i) & 1); }
+  };
+
+  function encodeData(text, ver){
+    var utf8 = [];
+    var encoded = unescape(encodeURIComponent(text));
+    for(var i=0;i<encoded.length;i++) utf8.push(encoded.charCodeAt(i));
+
+    var buf = new BitBuffer();
+    buf.put(4, 4); // バイトモード
+    buf.put(utf8.length, ver <= 9 ? 8 : 16);
+    for(var k=0;k<utf8.length;k++) buf.put(utf8[k], 8);
+
+    var capacityBits = dataCapacity(ver) * 8;
+    // 終端子
+    var term = Math.min(4, capacityBits - buf.bits.length);
+    for(var t=0;t<term;t++) buf.bits.push(0);
+    // バイト境界揃え
+    while(buf.bits.length % 8 !== 0) buf.bits.push(0);
+    // 埋め草バイト
+    var padBytes = [0xEC, 0x11], pi = 0;
+    while(buf.bits.length < capacityBits){
+      buf.put(padBytes[pi % 2], 8);
+      pi++;
+    }
+    // バイト列化
+    var bytes = [];
+    for(var b=0;b<buf.bits.length;b+=8){
+      var val = 0;
+      for(var q=0;q<8;q++) val = (val<<1) | buf.bits[b+q];
+      bytes.push(val);
+    }
+    return bytes;
+  }
+
+  function interleave(dataBytes, ver){
+    var v = VERSION_M[ver];
+    var blocks = [], ecBlocks = [], idx = 0;
+    for(var i=0;i<v.g1;i++){
+      blocks.push(dataBytes.slice(idx, idx+v.s1));
+      idx += v.s1;
+    }
+    for(var j=0;j<v.g2;j++){
+      blocks.push(dataBytes.slice(idx, idx+v.s2));
+      idx += v.s2;
+    }
+    for(var b=0;b<blocks.length;b++){
+      ecBlocks.push(rsEncode(blocks[b], v.ec));
+    }
+    var result = [];
+    var maxData = Math.max(v.s1, v.s2);
+    for(var c=0;c<maxData;c++){
+      for(var bb=0;bb<blocks.length;bb++){
+        if(c < blocks[bb].length) result.push(blocks[bb][c]);
+      }
+    }
+    for(var e=0;e<v.ec;e++){
+      for(var eb=0;eb<ecBlocks.length;eb++){
+        result.push(ecBlocks[eb][e]);
+      }
+    }
+    return result;
+  }
+
+  // --- モジュール配置 ---
+  function createMatrix(ver){
+    var size = ver*4 + 17;
+    var m = [], reserved = [];
+    for(var i=0;i<size;i++){
+      m.push(new Array(size).fill(null));
+      reserved.push(new Array(size).fill(false));
+    }
+    return {m:m, reserved:reserved, size:size};
+  }
+  function placeFinder(g, row, col){
+    for(var r=-1;r<=7;r++){
+      for(var c=-1;c<=7;c++){
+        var rr = row+r, cc = col+c;
+        if(rr<0||rr>=g.size||cc<0||cc>=g.size) continue;
+        var isBorder = (r>=0&&r<=6&&(c===0||c===6)) || (c>=0&&c<=6&&(r===0||r===6));
+        var isCenter = (r>=2&&r<=4&&c>=2&&c<=4);
+        g.m[rr][cc] = (isBorder||isCenter) ? 1 : 0;
+        g.reserved[rr][cc] = true;
+      }
+    }
+  }
+  function placeAlignment(g, ver){
+    var pos = ALIGN_POS[ver];
+    for(var i=0;i<pos.length;i++){
+      for(var j=0;j<pos.length;j++){
+        var r = pos[i], c = pos[j];
+        if(g.reserved[r][c]) continue;
+        for(var dr=-2;dr<=2;dr++){
+          for(var dc=-2;dc<=2;dc++){
+            var isRing = Math.max(Math.abs(dr), Math.abs(dc)) === 2;
+            var isDot = (dr===0 && dc===0);
+            g.m[r+dr][c+dc] = (isRing||isDot) ? 1 : 0;
+            g.reserved[r+dr][c+dc] = true;
+          }
+        }
+      }
+    }
+  }
+  function placeTiming(g){
+    for(var i=8;i<g.size-8;i++){
+      var val = (i % 2 === 0) ? 1 : 0;
+      if(!g.reserved[6][i]){ g.m[6][i] = val; g.reserved[6][i] = true; }
+      if(!g.reserved[i][6]){ g.m[i][6] = val; g.reserved[i][6] = true; }
+    }
+  }
+  function reserveFormat(g){
+    for(var i=0;i<9;i++){
+      if(!g.reserved[8][i]){ g.reserved[8][i] = true; g.m[8][i] = 0; }
+      if(!g.reserved[i][8]){ g.reserved[i][8] = true; g.m[i][8] = 0; }
+    }
+    for(var j=0;j<8;j++){
+      if(!g.reserved[8][g.size-1-j]){ g.reserved[8][g.size-1-j] = true; g.m[8][g.size-1-j] = 0; }
+      if(!g.reserved[g.size-1-j][8]){ g.reserved[g.size-1-j][8] = true; g.m[g.size-1-j][8] = 0; }
+    }
+    // 常に暗のモジュール
+    g.m[g.size-8][8] = 1;
+    g.reserved[g.size-8][8] = true;
+  }
+  // バージョン情報（バージョン7以上で必要）
+  function versionInfoBits(ver){
+    var rem = ver << 12;
+    var gen = 0x1F25;
+    for(var i=17;i>=12;i--){
+      if((rem >> i) & 1) rem ^= gen << (i-12);
+    }
+    return (ver << 12) | rem;
+  }
+  function placeVersionInfo(g, ver){
+    if(ver < 7) return;
+    var bitsVal = versionInfoBits(ver);
+    for(var i=0;i<18;i++){
+      var bit = (bitsVal >> i) & 1;
+      var row = Math.floor(i / 3);
+      var col = g.size - 11 + (i % 3);
+      g.m[row][col] = bit; g.reserved[row][col] = true;
+      g.m[col][row] = bit; g.reserved[col][row] = true;
+    }
+  }
+
+  function placeData(g, bytes){
+    var bits = [];
+    for(var i=0;i<bytes.length;i++){
+      for(var b=7;b>=0;b--) bits.push((bytes[i]>>b)&1);
+    }
+    var idx = 0, up = true;
+    for(var col=g.size-1; col>0; col-=2){
+      if(col === 6) col--; // タイミングパターン列を飛ばす
+      for(var n=0;n<g.size;n++){
+        var row = up ? (g.size-1-n) : n;
+        for(var k=0;k<2;k++){
+          var c = col - k;
+          if(g.reserved[row][c]) continue;
+          g.m[row][c] = (idx < bits.length) ? bits[idx] : 0;
+          idx++;
+        }
+      }
+      up = !up;
+    }
+  }
+  function maskFn(id, r, c){
+    switch(id){
+      case 0: return (r+c)%2===0;
+      case 1: return r%2===0;
+      case 2: return c%3===0;
+      case 3: return (r+c)%3===0;
+      case 4: return (Math.floor(r/2)+Math.floor(c/3))%2===0;
+      case 5: return ((r*c)%2 + (r*c)%3)===0;
+      case 6: return (((r*c)%2 + (r*c)%3)%2)===0;
+      case 7: return (((r+c)%2 + (r*c)%3)%2)===0;
+    }
+  }
+  function applyMask(g, id){
+    var out = g.m.map(function(row){ return row.slice(); });
+    for(var r=0;r<g.size;r++){
+      for(var c=0;c<g.size;c++){
+        if(g.reserved[r][c]) continue;
+        if(maskFn(id, r, c)) out[r][c] ^= 1;
+      }
+    }
+    return out;
+  }
+
+  // 形式情報（レベルM = 00）
+  function formatBits(maskId){
+    var data = (0 << 3) | maskId; // Mは 00
+    var val = data << 10;
+    var gen = 0x537;
+    for(var i=14;i>=10;i--){
+      if((val >> i) & 1) val ^= gen << (i-10);
+    }
+    var result = ((data << 10) | val) ^ 0x5412;
+    return result;
+  }
+  function placeFormat(matrix, size, maskId){
+    var fmt = formatBits(maskId);
+    for(var i=0;i<15;i++){
+      var bit = (fmt >> (14-i)) & 1;
+      // 左上
+      if(i < 6) matrix[8][i] = bit;
+      else if(i === 6) matrix[8][7] = bit;
+      else if(i === 7) matrix[8][8] = bit;
+      else if(i === 8) matrix[7][8] = bit;
+      else matrix[14-i][8] = bit;
+      // 右下・右上
+      if(i < 7) matrix[size-1-i][8] = bit;
+      else matrix[8][size-15+i] = bit;
+    }
+    matrix[size-8][8] = 1;
+  }
+
+  // マスク評価（ペナルティ計算）
+  function penalty(matrix, size){
+    var score = 0, r, c, i;
+    // 規則1：同色連続
+    for(r=0;r<size;r++){
+      var runV = matrix[r][0], runLen = 1;
+      for(c=1;c<size;c++){
+        if(matrix[r][c] === runV) runLen++;
+        else { if(runLen>=5) score += 3 + (runLen-5); runV = matrix[r][c]; runLen = 1; }
+      }
+      if(runLen>=5) score += 3 + (runLen-5);
+    }
+    for(c=0;c<size;c++){
+      var runV2 = matrix[0][c], runLen2 = 1;
+      for(r=1;r<size;r++){
+        if(matrix[r][c] === runV2) runLen2++;
+        else { if(runLen2>=5) score += 3 + (runLen2-5); runV2 = matrix[r][c]; runLen2 = 1; }
+      }
+      if(runLen2>=5) score += 3 + (runLen2-5);
+    }
+    // 規則2：2x2ブロック
+    for(r=0;r<size-1;r++){
+      for(c=0;c<size-1;c++){
+        var v = matrix[r][c];
+        if(matrix[r][c+1]===v && matrix[r+1][c]===v && matrix[r+1][c+1]===v) score += 3;
+      }
+    }
+    // 規則3：特定パターン
+    var pat1 = [1,0,1,1,1,0,1,0,0,0,0];
+    var pat2 = [0,0,0,0,1,0,1,1,1,0,1];
+    function matchAt(arr, pat){
+      for(var k=0;k<pat.length;k++) if(arr[k]!==pat[k]) return false;
+      return true;
+    }
+    for(r=0;r<size;r++){
+      for(c=0;c<=size-11;c++){
+        var seg = matrix[r].slice(c, c+11);
+        if(matchAt(seg,pat1) || matchAt(seg,pat2)) score += 40;
+      }
+    }
+    for(c=0;c<size;c++){
+      for(r=0;r<=size-11;r++){
+        var segv = [];
+        for(i=0;i<11;i++) segv.push(matrix[r+i][c]);
+        if(matchAt(segv,pat1) || matchAt(segv,pat2)) score += 40;
+      }
+    }
+    // 規則4：暗モジュール比率
+    var dark = 0;
+    for(r=0;r<size;r++) for(c=0;c<size;c++) if(matrix[r][c]===1) dark++;
+    var ratio = dark * 100 / (size*size);
+    score += Math.floor(Math.abs(ratio - 50) / 5) * 10;
+    return score;
+  }
+
+  function generate(text){
+    var utf8len = unescape(encodeURIComponent(text)).length;
+    var ver = chooseVersion(utf8len);
+    var dataBytes = encodeData(text, ver);
+    var finalBytes = interleave(dataBytes, ver);
+
+    var g = createMatrix(ver);
+    placeFinder(g, 0, 0);
+    placeFinder(g, 0, g.size-7);
+    placeFinder(g, g.size-7, 0);
+    placeAlignment(g, ver);
+    placeTiming(g);
+    reserveFormat(g);
+    placeVersionInfo(g, ver);
+    placeData(g, finalBytes);
+
+    var best = null, bestScore = Infinity;
+    for(var maskId=0; maskId<8; maskId++){
+      var masked = applyMask(g, maskId);
+      placeFormat(masked, g.size, maskId);
+      var s = penalty(masked, g.size);
+      if(s < bestScore){ bestScore = s; best = masked; }
+    }
+    return { modules: best, size: g.size, version: ver };
+  }
+
+  return { generate: generate };
+})();
+
+
+/* ===================== QRコード：ねふだPNG作成 ===================== */
+function qrPayload(p){ return JSON.stringify({ name:p.name, price:p.price }); }
+
+function drawLabelBody(ctx, out, p){
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,out.width,out.height);
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(6,6,out.width-12,out.height-12);
+
+  // QRコードを描画
+  var qrOk = false;
+  try{
+    var qr = QRGen.generate(qrPayload(p));
+    var target = 280;
+    var scale = Math.floor(target / (qr.size + 8));
+    if(scale < 1) scale = 1;
+    var drawSize = (qr.size + 8) * scale;
+    var originX = Math.round((out.width - drawSize) / 2);
+    var originY = 30;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(originX, originY, drawSize, drawSize);
+    ctx.fillStyle = '#000000';
+    for(var r=0;r<qr.size;r++){
+      for(var c=0;c<qr.size;c++){
+        if(qr.modules[r][c]){
+          ctx.fillRect(originX + (c+4)*scale, originY + (r+4)*scale, scale, scale);
+        }
+      }
+    }
+    qrOk = true;
+  }catch(e){
+    qrOk = false;
+  }
+  if(!qrOk){
+    ctx.fillStyle = '#888888';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('QRコードを作成できませんでした', out.width/2, 170, out.width-40);
+  }
+
+  ctx.fillStyle = '#111111';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 34px sans-serif';
+  ctx.fillText(p.name, out.width/2, 370, out.width-40);
+  ctx.font = 'bold 44px sans-serif';
+  ctx.fillText(p.price.toLocaleString('ja-JP') + '円', out.width/2, 440, out.width-40);
+}
+function makeLabelCanvas(p){
+  return new Promise((resolve)=>{
+    const out = document.createElement('canvas');
+    out.width = 400; out.height = 520;
+    const ctx = out.getContext('2d');
+    drawLabelBody(ctx, out, p);
+    resolve(out);
+  });
+}
+function canvasToBlob(canvas){
+  return new Promise((resolve)=>{
+    if(canvas.toBlob){
+      canvas.toBlob(blob=>resolve(blob), 'image/png');
+    }else{
+      // toBlob未対応ブラウザ向けフォールバック
+      const dataUrl = canvas.toDataURL('image/png');
+      const bin = atob(dataUrl.split(',')[1]);
+      const arr = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++){ arr[i] = bin.charCodeAt(i); }
+      resolve(new Blob([arr], { type:'image/png' }));
+    }
+  });
+}
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+}
+async function downloadSingleLabel(id){
+  const p = state.products.find(x=>x.id===id);
+  if(!p) return;
+  const canvas = await makeLabelCanvas(p);
+  const blob = await canvasToBlob(canvas);
+  downloadBlob(blob, `nefuda_${p.name}.png`);
+}
+function renderLabelChecklist(){
+  const wrap = document.getElementById('label-checklist');
+  wrap.innerHTML = '';
+  state.products.forEach(p=>{
+    const row = document.createElement('div');
+    row.className = 'checkbox-row';
+    row.innerHTML = `<input type="checkbox" checked data-label-check="${p.id}"><label>${escapeHtml(p.name)}（${yen(p.price)}）</label>`;
+    wrap.appendChild(row);
+  });
+}
+document.getElementById('btn-download-labels').addEventListener('click', async ()=>{
+  const ids = [...document.querySelectorAll('[data-label-check]:checked')].map(el=>el.dataset.labelCheck);
+  const targets = state.products.filter(p=>ids.includes(p.id));
+  if(targets.length===0){ showToast('商品を選択してください'); return; }
+  for(const p of targets){
+    const canvas = await makeLabelCanvas(p);
+    const blob = await canvasToBlob(canvas);
+    downloadBlob(blob, `nefuda_${p.name}.png`);
+    await new Promise(r=>setTimeout(r, 500));
+  }
+  showToast('ダウンロードしました');
+});
+
+/* ===================== レジ打ち（タップ方式） ===================== */
+function renderRegisterProducts(){
+  ['tap-product-grid'].forEach(gridId=>{
+    const grid = document.getElementById(gridId);
+    grid.innerHTML = '';
+    state.products.forEach(p=>{
+      const qty = state.cart[p.id] || 0;
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <div class="product-photo-wrap" data-tap="${p.id}">
+          ${p.photo ? `<img src="${p.photo}">` : `<div class="thumb-placeholder">しゃしん なし</div>`}
+          <div class="sticker" style="background:${p.color};"></div>
+          ${qty>0 ? `<div class="qty-badge">${qty}</div>` : ''}
+        </div>
+        <div class="price-tag">${yen(p.price)}</div>
+        <div class="product-name">${escapeHtml(p.name)}</div>
+        <div class="stepper" style="justify-content:center;">
+          <button type="button" data-dec="${p.id}">－</button>
+          <input type="text" inputmode="numeric" data-qty="${p.id}" value="${qty}" style="width:56px;">
+          <button type="button" data-inc="${p.id}">＋</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+    grid.querySelectorAll('[data-tap]').forEach(el=>{
+      el.addEventListener('click', ()=>{ changeCartQty(el.dataset.tap, 1); soundTap(); });
+    });
+    grid.querySelectorAll('[data-inc]').forEach(el=>el.addEventListener('click', ()=>changeCartQty(el.dataset.inc, 1)));
+    grid.querySelectorAll('[data-dec]').forEach(el=>el.addEventListener('click', ()=>changeCartQty(el.dataset.dec, -1)));
+    grid.querySelectorAll('[data-qty]').forEach(el=>{
+      el.addEventListener('change', ()=>{
+        const v = Math.max(0, parseInt(el.value)||0);
+        setCartQty(el.dataset.qty, v);
+      });
+    });
+  });
+}
+function changeCartQty(id, delta){
+  const cur = state.cart[id] || 0;
+  setCartQty(id, Math.max(0, cur + delta));
+}
+function setCartQty(id, qty){
+  if(qty <= 0){ delete state.cart[id]; }
+  else{ state.cart[id] = qty; }
+  renderRegisterProducts();
+  renderCart();
+}
+function cartTotal(){
+  let total = 0;
+  Object.keys(state.cart).forEach(id=>{
+    const p = state.products.find(x=>x.id===id);
+    if(p) total += p.price * state.cart[id];
+  });
+  return total;
+}
+function renderCart(){
+  const total = cartTotal();
+  [['cart-items','cart-total-amount'], ['cart-items-qr','cart-total-amount-qr']].forEach(([listId, totalId])=>{
+    const list = document.getElementById(listId);
+    list.innerHTML = '';
+    const ids = Object.keys(state.cart);
+    if(ids.length===0){ list.innerHTML = '<p class="small-note">まだ なにも ないよ</p>'; }
+    ids.forEach(id=>{
+      const p = state.products.find(x=>x.id===id);
+      if(!p) return;
+      const qty = state.cart[id];
+      const row = document.createElement('div');
+      row.className = 'cart-item';
+      row.innerHTML = `<span>${escapeHtml(p.name)} × ${qty}</span><span>${yen(p.price*qty)}</span>`;
+      list.appendChild(row);
+    });
+    document.getElementById(totalId).textContent = yen(total);
+  });
+}
+document.getElementById('btn-clear-cart').addEventListener('click', ()=>{ state.cart={}; renderRegisterProducts(); renderCart(); });
+document.getElementById('btn-clear-cart-qr').addEventListener('click', ()=>{ state.cart={}; renderCart(); });
+document.getElementById('btn-to-checkout').addEventListener('click', ()=>goCheckout());
+document.getElementById('btn-to-checkout-qr').addEventListener('click', ()=>goCheckout());
+
+/* ===================== レジ打ち（QR方式） ===================== */
+async function startQrCamera(){
+  const video = document.getElementById('qr-video');
+  const statusEl = document.getElementById('qr-status');
+  if(typeof jsQR === 'undefined'){
+    statusEl.textContent = 'よみとりの じゅんびが できなかったよ（ネットに つないでから ひらいてね）';
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } });
+    state.qrStream = stream;
+    video.srcObject = stream;
+    await video.play();
+    statusEl.textContent = 'QRコードを カメラに みせてね';
+    state.qrScanning = true;
+    requestAnimationFrame(scanQrFrame);
+  }catch(e){
+    statusEl.textContent = 'カメラが つかえなかったよ（せっていを かくにんしてね）';
+  }
+}
+function stopQrCamera(){
+  state.qrScanning = false;
+  if(state.qrStream){
+    state.qrStream.getTracks().forEach(t=>t.stop());
+    state.qrStream = null;
+  }
+}
+function scanQrFrame(){
+  if(!state.qrScanning) return;
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('hidden-canvas');
+  if(video.readyState === video.HAVE_ENOUGH_DATA){
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = window.jsQR ? jsQR(imageData.data, canvas.width, canvas.height) : null;
+    if(code && code.data){
+      handleQrResult(code.data);
+    }
+  }
+  requestAnimationFrame(scanQrFrame);
+}
+function handleQrResult(text){
+  const now = Date.now();
+  if(now - state.lastScanTime < 1200) return; // 連続読み取り防止
+  let data;
+  try{ data = JSON.parse(text); }catch(e){ return; }
+  if(!data || !data.name || typeof data.price !== 'number') return;
+  state.lastScanTime = now;
+
+  let product = state.products.find(p=>p.name===data.name && p.price===data.price);
+  if(!product){
+    product = { id: uid(), name:data.name, price:data.price, color:'#999999', photo:null };
+    state.products.push(product);
+    saveProducts();
+  }
+  changeCartQty(product.id, 1);
+  soundAdd();
+  document.getElementById('qr-status').textContent = `「${data.name}」を いれたよ`;
+  showToast(`「${data.name}」を かごに いれたよ`);
+}
+document.getElementById('btn-qr-start').addEventListener('click', startQrCamera);
+
+/* ===================== お会計画面 ===================== */
+function goCheckout(){
+  if(Object.keys(state.cart).length === 0){ showToast('かごが からっぽだよ'); return; }
+  state.receivedAmount = 0;
+  document.getElementById('received-input').value = 0;
+  document.getElementById('checkout-total').textContent = yen(cartTotal());
+  document.getElementById('change-result').innerHTML = '';
+  document.getElementById('btn-next-customer').style.display = 'none';
+  showScreen('screen-checkout');
+}
+document.getElementById('btn-tap-back').addEventListener('click', ()=>{ state.cart={}; showScreen('screen-title'); });
+document.getElementById('btn-qr-back').addEventListener('click', ()=>{ state.cart={}; showScreen('screen-title'); });
+document.getElementById('btn-checkout-back').addEventListener('click', ()=>{
+  showScreen(state.settings.inputMode==='qr' ? 'screen-register-qr' : 'screen-register-tap');
+});
+document.getElementById('btn-goto-register').addEventListener('click', ()=>{
+  state.cart = {};
+  renderRegisterProducts();
+  renderCart();
+  if(state.settings.inputMode === 'qr'){
+    document.getElementById('qr-status').textContent = 'カメラを じゅんびして いるよ…';
+    showScreen('screen-register-qr');
+  }else{
+    showScreen('screen-register-tap');
+  }
+});
+document.getElementById('btn-goto-settings').addEventListener('click', ()=>{
+  renderProductList();
+  renderSettingToggles();
+  showScreen('screen-settings');
+});
+document.getElementById('btn-settings-back').addEventListener('click', ()=>showScreen('screen-title'));
+
+/* --- 受け取ったお金 --- */
+const DENOMS = [5000,1000,500,100,50,10];
+const DENOM_COLORS = { 5000:'#E8D9BC', 1000:'#EFE3CC', 500:'#DFDFDF', 100:'#E6E6E6', 50:'#EDEDED', 10:'#E0BFA0' };
+function moneyIconHTML(value){
+  const isBill = value >= 1000;
+  const color = DENOM_COLORS[value] || '#E0E0E0';
+  return `<div class="money-icon ${isBill?'bill':'coin'}" style="background:${color};">${value.toLocaleString('ja-JP')}</div>`;
+}
+function renderDenomGrid(){
+  const grid = document.getElementById('denom-grid');
+  grid.innerHTML = '';
+  DENOMS.forEach(v=>{
+    const btn = document.createElement('button');
+    btn.className = 'denom-btn';
+    btn.type = 'button';
+    btn.textContent = `${v.toLocaleString('ja-JP')}${v>=1000?'円さつ':'円'}`;
+    btn.addEventListener('click', ()=>{
+      state.receivedAmount += v;
+      document.getElementById('received-input').value = state.receivedAmount;
+      soundTap();
+    });
+    grid.appendChild(btn);
+  });
+}
+document.getElementById('received-input').addEventListener('change', (e)=>{
+  state.receivedAmount = Math.max(0, parseInt(e.target.value)||0);
+  e.target.value = state.receivedAmount;
+});
+document.getElementById('received-up').addEventListener('click', ()=>{
+  state.receivedAmount = Math.max(0, state.receivedAmount + 10);
+  document.getElementById('received-input').value = state.receivedAmount;
+});
+document.getElementById('received-down').addEventListener('click', ()=>{
+  state.receivedAmount = Math.max(0, state.receivedAmount - 10);
+  document.getElementById('received-input').value = state.receivedAmount;
+});
+document.getElementById('btn-received-clear').addEventListener('click', ()=>{
+  state.receivedAmount = 0;
+  document.getElementById('received-input').value = 0;
+});
+
+function denomBreakdown(amount){
+  let rest = amount;
+  const result = [];
+  DENOMS.forEach(v=>{
+    const count = Math.floor(rest / v);
+    if(count > 0){ result.push({ value:v, count }); rest -= v*count; }
+  });
+  return result;
+}
+
+document.getElementById('btn-calc').addEventListener('click', ()=>{
+  const total = cartTotal();
+  const received = state.receivedAmount;
+  const resultEl = document.getElementById('change-result');
+  if(received < total){
+    const short = total - received;
+    resultEl.innerHTML = `
+      <div class="change-box short">
+        <div>もう すこし おかねが いるよ</div>
+        <div class="amount">あと ${yen(short)}</div>
+        <div class="small-note">もう いちど かくにんして、いれなおしてね</div>
+      </div>`;
+    document.getElementById('btn-next-customer').style.display = 'none';
+    return;
+  }
+  const change = received - total;
+  let html = `<div class="change-box ok"><div>おつり</div><div class="amount">${yen(change)}</div>`;
+  if(state.settings.changeLevel === 2 && change > 0){
+    const bd = denomBreakdown(change);
+    html += '<div class="denom-breakdown">';
+    bd.forEach(item=>{
+      const label = item.value>=1000 ? item.value.toLocaleString('ja-JP')+'円さつ' : item.value+'円玉';
+      const icons = Array.from({length:item.count}).map(()=>moneyIconHTML(item.value)).join('');
+      html += `<div><div class="row-label">${label} が ${item.count}まい</div><div class="icon-row">${icons}</div></div>`;
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  resultEl.innerHTML = html;
+  soundAdd();
+  document.getElementById('btn-next-customer').style.display = 'block';
+});
+
+document.getElementById('btn-next-customer').addEventListener('click', ()=>{
+  state.cart = {};
+  state.receivedAmount = 0;
+  renderRegisterProducts();
+  renderCart();
+  if(state.settings.inputMode === 'qr'){
+    showScreen('screen-register-qr');
+  }else{
+    showScreen('screen-register-tap');
+  }
+});
+
+/* ===================== 初期化 ===================== */
+function init(){
+  loadState();
+  renderProductList();
+  renderSettingToggles();
+  renderRegisterProducts();
+  renderCart();
+  renderDenomGrid();
+  if(!storageOk){
+    showToast('※プレビュー環境では保存機能が動作しません');
+  }
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
