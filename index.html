@@ -78,6 +78,22 @@
   .btn.big{ font-size:24px; padding:20px 32px; min-height:72px; width:100%; }
   .btn:disabled{ opacity:0.45; }
 
+  /* お会計画面：計算ボタンまで一目で見えるよう全体を少しコンパクトに */
+  #screen-checkout{ padding-bottom:16px; }
+  #screen-checkout .app-header{ margin-bottom:8px; }
+  #screen-checkout .card{ padding:12px; margin-bottom:10px; }
+  #screen-checkout .customer-total-box{ padding:14px; margin-bottom:10px; }
+  #screen-checkout .customer-total-box .amount-sentence{ font-size:20px; line-height:1.4; }
+  #screen-checkout .customer-total-box .amount-sentence span{ font-size:32px; margin:0 4px; }
+  #screen-checkout .received-row{ margin-bottom:8px; }
+  #screen-checkout .received-row-amount{ font-size:24px; }
+  #screen-checkout .denom-grid{ gap:6px; margin-top:6px; }
+  #screen-checkout .denom-btn{ min-height:42px; font-size:15px; }
+  #screen-checkout .keypad-grid{ gap:6px; margin-top:8px; }
+  #screen-checkout .keypad-btn{ min-height:42px; font-size:18px; }
+  #screen-checkout .card > div[style*="flex"]{ margin-top:8px !important; }
+  #screen-checkout #btn-calc{ margin-top:2px; padding:12px 32px; min-height:56px; font-size:20px; }
+
   .title-screen{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:92vh; text-align:center; gap:22px; }
   .title-screen h1{ font-size:34px; margin:0; }
   .title-buttons{ display:flex; flex-direction:column; gap:16px; width:min(420px,90vw); }
@@ -150,8 +166,19 @@
     background:var(--accent); color:#fff; font-weight:700; font-size:14px;
     display:flex; align-items:center; justify-content:center; padding:0 6px;
   }
-  .price-tag{ font-size:20px; font-weight:700; text-align:center; }
-  .product-name{ font-size:14px; text-align:center; color:var(--sub); }
+  .price-tag{ font-size:17px; font-weight:700; text-align:center; color:var(--sub); }
+  .product-name{ font-size:19px; font-weight:700; text-align:center; line-height:1.3; }
+  .product-tap-flat{
+    position:relative; border-radius:14px; cursor:pointer;
+    transition:transform .12s ease; background:#F7F2E4;
+    display:flex; align-items:center; justify-content:center;
+    min-height:88px; padding:18px 10px;
+  }
+  .product-tap-flat:active{ transform:scale(0.96); }
+  .no-photo-label{
+    font-size:22px; font-weight:700; text-align:center; color:var(--ink);
+    word-break:break-all;
+  }
 
   .cart-panel{ flex:1; min-width:260px; background:#fff; border:2px solid var(--line); border-radius:var(--radius); padding:14px; position:sticky; top:16px; }
   .cart-item{ display:flex; justify-content:space-between; font-size:15px; padding:6px 0; border-bottom:1px solid var(--line); }
@@ -164,8 +191,24 @@
   .customer-total-box{
     background:var(--accent); color:#fff; border-radius:var(--radius); padding:26px; text-align:center; margin-bottom:18px;
   }
-  .customer-total-box .label{ font-size:16px; opacity:0.9; }
-  .customer-total-box .amount{ font-size:52px; font-weight:700; margin-top:4px; }
+  .customer-total-box .amount-sentence{
+    font-size:26px; font-weight:700; line-height:1.6;
+  }
+  .customer-total-box .amount-sentence span{ font-size:48px; margin:0 6px; }
+
+  .received-row{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    flex-wrap:nowrap; margin-bottom:12px;
+  }
+  .received-row-label{ font-size:18px; font-weight:700; white-space:nowrap; }
+  .received-row-amount{ font-size:30px; font-weight:700; color:var(--accent-dark); white-space:nowrap; }
+
+  .keypad-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+  .keypad-btn{
+    min-height:56px; border-radius:14px; border:2px solid var(--line); background:#fff;
+    color:var(--ink); font-size:22px; font-weight:700; cursor:pointer;
+  }
+  .keypad-btn:active{ background:var(--accent-soft); }
 
   .denom-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
   .denom-btn{
@@ -178,6 +221,8 @@
   .change-box.ok{ background:var(--accent-soft); border:2px solid var(--accent); }
   .change-box.short{ background:#FBEAE3; border:2px solid var(--warn); }
   .change-box .amount{ font-size:40px; font-weight:700; margin:6px 0; }
+  .change-box .amount-sentence{ font-size:24px; font-weight:700; color:var(--accent-dark); line-height:1.7; }
+  .change-box .amount-sentence span{ font-size:40px; margin:0 4px; }
   .denom-breakdown{ display:flex; flex-direction:column; gap:14px; margin-top:14px; }
   .denom-breakdown .row-label{ font-size:17px; font-weight:700; text-align:left; margin-bottom:6px; }
   .denom-breakdown .icon-row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
@@ -219,7 +264,7 @@
     </p>
     <div class="title-buttons">
       <button class="btn big" id="btn-goto-register"><ruby>レジ<rt></rt></ruby>を はじめる</button>
-      <button class="btn secondary big" id="btn-goto-settings">先生用の設定</button>
+      <button class="btn secondary big" id="btn-goto-settings">設定</button>
     </div>
   </div>
 </div>
@@ -227,11 +272,11 @@
 <!-- ============ 設定画面 ============ -->
 <div id="screen-settings" class="screen">
   <div class="app-header">
-    <h1 class="app-title">先生用の設定</h1>
+    <h1 class="app-title">設定</h1>
     <button class="navbtn" id="btn-settings-back">タイトルに戻る</button>
   </div>
   <div class="explain">
-    ここは教員が使用する設定画面です。商品の追加・編集や、レジの動作設定を行うことができます。
+    ここでは商品の追加・編集や、レジの動作を設定できます。
   </div>
 
   <div class="card">
@@ -260,9 +305,17 @@
         <div class="color-swatches" id="pf-colors"></div>
       </div>
       <div class="form-field">
-        <label>商品写真（ファイルを選択、またはカメラで撮影）</label>
-        <input type="file" accept="image/*" id="pf-photo">
-        <div style="margin-top:8px;"><img id="pf-photo-preview" style="max-width:120px;max-height:120px;border-radius:12px;display:none;"></div>
+        <label>商品写真</label>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn secondary" id="btn-pick-file">ファイルを選択</button>
+          <button type="button" class="btn secondary" id="btn-pick-camera">写真を撮る</button>
+        </div>
+        <input type="file" accept="image/*" id="pf-photo-file" style="display:none;">
+        <input type="file" accept="image/*" capture="environment" id="pf-photo-camera" style="display:none;">
+        <div id="pf-photo-preview-wrap" style="margin-top:8px; display:none;">
+          <img id="pf-photo-preview" style="max-width:120px;max-height:120px;border-radius:12px; display:block; margin-bottom:8px;">
+          <button type="button" class="navbtn" id="btn-remove-photo">写真を削除</button>
+        </div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn" id="btn-save-product">保存する</button>
@@ -296,13 +349,21 @@
   </div>
 
   <div class="card">
-    <h2>値札（QRコード）をPNGで出力</h2>
+    <h2>値札（QRコード）の確認・出力</h2>
     <p class="small-note">
-      商品ごとに、QRコードと商品名・価格だけを配置した画像（PNG）を作成します。写真は含まれません。<br>
-      パソコンに転送して印刷できます。複数選択してまとめてダウンロードできますが、うまくいかない場合は各商品の「値札PNG」ボタンから1枚ずつダウンロードしてください。
+      商品一覧の「値札を見る」を押すと、ここにQRコードと商品名・価格だけの値札が表示されます。写真は含まれません。<br>
+      パソコンでは「画像をダウンロード」でファイルとして保存できます。<br>
+      iPhone・iPadでは、Webページの機能から直接「写真」アプリへ保存することができないため、表示された値札の画像を<b>長押しして「写真に追加」を選ぶ</b>と写真アプリに保存できます。「画像をダウンロード」を押した場合はFilesアプリの「ダウンロード」フォルダに保存されます。「画像をコピー」は他の書類などに直接貼り付けたいときにご利用ください。
     </p>
-    <div id="label-checklist"></div>
-    <button class="btn" id="btn-download-labels">選択した値札をダウンロード</button>
+    <div id="label-preview" style="display:none;">
+      <img id="label-preview-img" style="max-width:260px; display:block; margin:0 auto 14px; border-radius:12px; border:2px solid var(--line);">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <button class="btn" id="btn-label-download">画像をダウンロード</button>
+        <button class="btn secondary" id="btn-label-copy">画像をコピー</button>
+      </div>
+      <p class="small-note" id="label-copy-note" style="text-align:center; margin-top:8px;"></p>
+    </div>
+    <p class="small-note" id="label-preview-empty">商品一覧の「値札を見る」を押すと、ここに表示されます。</p>
   </div>
 </div>
 
@@ -364,24 +425,23 @@
     <h1 class="app-title"><ruby>お会計<rt>おかいけい</rt></ruby></h1>
     <button class="navbtn" id="btn-checkout-back">レジに もどる</button>
   </div>
-  <div class="explain">
-    <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>った おかねを いれて、「けいさん」を おすと おつりが わかるよ。
-  </div>
 
   <div class="customer-total-box">
-    <div class="label">おきゃくさんへ ごうけいきんがく</div>
-    <div class="amount" id="checkout-total">0円</div>
+    <div class="amount-sentence">ごうけい <span id="checkout-total">0円</span> です</div>
   </div>
 
   <div class="card">
-    <h2><ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>った おかね</h2>
-    <div class="stepper">
-      <button type="button" id="received-down">－</button>
-      <input type="text" inputmode="numeric" id="received-input" value="0">
-      <button type="button" id="received-up">＋</button>
+    <div class="received-row">
+      <span class="received-row-label"><ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>った おかね</span>
+      <span class="received-row-amount" id="received-display">0円</span>
     </div>
+    <input type="hidden" id="received-input" value="0">
     <div class="denom-grid" id="denom-grid"></div>
-    <button class="btn secondary" id="btn-received-clear" style="margin-top:10px; width:100%;">うけとった おかねを けす</button>
+    <div class="keypad-grid" id="keypad-grid"></div>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="btn secondary" id="btn-received-undo" style="flex:1;">ひとつ けす</button>
+      <button class="btn secondary" id="btn-received-clear" style="flex:1;">ぜんぶ けす</button>
+    </div>
   </div>
 
   <button class="btn big" id="btn-calc" style="margin-top:6px;">けいさん</button>
@@ -406,7 +466,7 @@ const DEFAULT_PRODUCTS = [
   { id:'p1', name:'おにぎり', price:150, color:'#E53935' },
   { id:'p2', name:'ジュース', price:120, color:'#1E88E5' }
 ];
-const DEFAULT_SETTINGS = { inputMode:'qr', changeLevel:1, soundOn:true };
+const DEFAULT_SETTINGS = { inputMode:'tap', changeLevel:1, soundOn:true };
 
 const COLOR_PRESETS = [
   { name:'あか', hex:'#E53935' },
@@ -425,7 +485,9 @@ let state = {
   cart: {},        // productId -> qty
   editingId: null, // 編集中の商品ID（nullなら新規）
   pendingPhoto: null,
+  photoRemoved: false,
   receivedAmount: 0,
+  receivedHistory: [],
   qrStream: null,
   qrScanning: false,
   lastScanTime: 0
@@ -535,14 +597,13 @@ function renderProductList(){
       <div class="actions">
         <button class="navbtn" data-edit="${p.id}">編集</button>
         <button class="navbtn" data-delete="${p.id}">削除</button>
-        <button class="navbtn" data-single-label="${p.id}">値札PNG</button>
+        <button class="navbtn" data-single-label="${p.id}">値札を見る</button>
       </div>`;
     wrap.appendChild(row);
   });
   wrap.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click', ()=>openProductForm(b.dataset.edit)));
   wrap.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click', ()=>deleteProduct(b.dataset.delete)));
-  wrap.querySelectorAll('[data-single-label]').forEach(b=>b.addEventListener('click', ()=>downloadSingleLabel(b.dataset.singleLabel)));
-  renderLabelChecklist();
+  wrap.querySelectorAll('[data-single-label]').forEach(b=>b.addEventListener('click', ()=>showLabelPreview(b.dataset.singleLabel)));
 }
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -579,24 +640,27 @@ function renderColorSwatches(selected){
 function openProductForm(id){
   state.editingId = id || null;
   state.pendingPhoto = null;
+  state.photoRemoved = false;
   const card = document.getElementById('product-form-card');
   card.style.display = 'block';
   document.getElementById('product-form-title').textContent = id ? '商品を編集する' : '商品を追加する';
   const preview = document.getElementById('pf-photo-preview');
-  document.getElementById('pf-photo').value = '';
+  const previewWrap = document.getElementById('pf-photo-preview-wrap');
+  document.getElementById('pf-photo-file').value = '';
+  document.getElementById('pf-photo-camera').value = '';
 
   if(id){
     const p = state.products.find(x=>x.id===id);
     document.getElementById('pf-name').value = p.name;
     document.getElementById('pf-price').value = p.price;
     renderColorSwatches(p.color);
-    if(p.photo){ preview.src = p.photo; preview.style.display='block'; state.pendingPhoto = p.photo; }
-    else{ preview.style.display='none'; }
+    if(p.photo){ preview.src = p.photo; previewWrap.style.display='block'; state.pendingPhoto = p.photo; }
+    else{ previewWrap.style.display='none'; }
   }else{
     document.getElementById('pf-name').value = '';
     document.getElementById('pf-price').value = 100;
     renderColorSwatches(COLOR_PRESETS[0].hex);
-    preview.style.display = 'none';
+    previewWrap.style.display = 'none';
   }
   card.scrollIntoView({behavior:'smooth', block:'start'});
 }
@@ -604,21 +668,34 @@ function closeProductForm(){
   document.getElementById('product-form-card').style.display = 'none';
   state.editingId = null;
   state.pendingPhoto = null;
+  state.photoRemoved = false;
 }
 
-document.getElementById('pf-photo').addEventListener('change', async (e)=>{
+document.getElementById('btn-pick-file').addEventListener('click', ()=>document.getElementById('pf-photo-file').click());
+document.getElementById('btn-pick-camera').addEventListener('click', ()=>document.getElementById('pf-photo-camera').click());
+document.getElementById('btn-remove-photo').addEventListener('click', ()=>{
+  state.pendingPhoto = null;
+  state.photoRemoved = true;
+  document.getElementById('pf-photo-preview-wrap').style.display = 'none';
+  document.getElementById('pf-photo-file').value = '';
+  document.getElementById('pf-photo-camera').value = '';
+});
+async function handlePhotoInput(e){
   const file = e.target.files[0];
   if(!file) return;
   try{
     const dataUrl = await resizeImageFile(file);
     state.pendingPhoto = dataUrl;
+    state.photoRemoved = false;
     const preview = document.getElementById('pf-photo-preview');
     preview.src = dataUrl;
-    preview.style.display = 'block';
+    document.getElementById('pf-photo-preview-wrap').style.display = 'block';
   }catch(err){
     showToast('しゃしんが よみこめなかったよ');
   }
-});
+}
+document.getElementById('pf-photo-file').addEventListener('change', handlePhotoInput);
+document.getElementById('pf-photo-camera').addEventListener('change', handlePhotoInput);
 
 document.getElementById('pf-price-up').addEventListener('click', ()=>{
   const inp = document.getElementById('pf-price');
@@ -639,7 +716,8 @@ document.getElementById('btn-save-product').addEventListener('click', ()=>{
   if(state.editingId){
     const p = state.products.find(x=>x.id===state.editingId);
     p.name = name; p.price = price; p.color = color;
-    if(state.pendingPhoto) p.photo = state.pendingPhoto;
+    if(state.photoRemoved) p.photo = null;
+    else if(state.pendingPhoto) p.photo = state.pendingPhoto;
   }else{
     state.products.push({ id:uid(), name, price, color, photo: state.pendingPhoto || null });
   }
@@ -1134,34 +1212,39 @@ function downloadBlob(blob, filename){
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 3000);
 }
-async function downloadSingleLabel(id){
+let currentLabelCanvas = null;
+let currentLabelProductName = '';
+async function showLabelPreview(id){
   const p = state.products.find(x=>x.id===id);
   if(!p) return;
   const canvas = await makeLabelCanvas(p);
-  const blob = await canvasToBlob(canvas);
-  downloadBlob(blob, `nefuda_${p.name}.png`);
+  currentLabelCanvas = canvas;
+  currentLabelProductName = p.name;
+  document.getElementById('label-preview-img').src = canvas.toDataURL('image/png');
+  document.getElementById('label-preview').style.display = 'block';
+  document.getElementById('label-preview-empty').style.display = 'none';
+  document.getElementById('label-copy-note').textContent = '';
+  document.getElementById('label-preview').scrollIntoView({behavior:'smooth', block:'center'});
 }
-function renderLabelChecklist(){
-  const wrap = document.getElementById('label-checklist');
-  wrap.innerHTML = '';
-  state.products.forEach(p=>{
-    const row = document.createElement('div');
-    row.className = 'checkbox-row';
-    row.innerHTML = `<input type="checkbox" checked data-label-check="${p.id}"><label>${escapeHtml(p.name)}（${yen(p.price)}）</label>`;
-    wrap.appendChild(row);
-  });
-}
-document.getElementById('btn-download-labels').addEventListener('click', async ()=>{
-  const ids = [...document.querySelectorAll('[data-label-check]:checked')].map(el=>el.dataset.labelCheck);
-  const targets = state.products.filter(p=>ids.includes(p.id));
-  if(targets.length===0){ showToast('商品を選択してください'); return; }
-  for(const p of targets){
-    const canvas = await makeLabelCanvas(p);
-    const blob = await canvasToBlob(canvas);
-    downloadBlob(blob, `nefuda_${p.name}.png`);
-    await new Promise(r=>setTimeout(r, 500));
+document.getElementById('btn-label-download').addEventListener('click', async ()=>{
+  if(!currentLabelCanvas) return;
+  const blob = await canvasToBlob(currentLabelCanvas);
+  downloadBlob(blob, `nefuda_${currentLabelProductName}.png`);
+});
+document.getElementById('btn-label-copy').addEventListener('click', async ()=>{
+  if(!currentLabelCanvas) return;
+  const noteEl = document.getElementById('label-copy-note');
+  if(!navigator.clipboard || typeof ClipboardItem === 'undefined'){
+    noteEl.textContent = 'この端末では画像のコピーに対応していません。ダウンロードするか、画像を長押しして保存してください。';
+    return;
   }
-  showToast('ダウンロードしました');
+  try{
+    const blob = await canvasToBlob(currentLabelCanvas);
+    await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]);
+    noteEl.textContent = 'コピーしました。書類などに貼り付けてください。';
+  }catch(e){
+    noteEl.textContent = 'コピーできませんでした。ダウンロードをご利用ください。';
+  }
 });
 
 /* ===================== レジ打ち（タップ方式） ===================== */
@@ -1173,14 +1256,21 @@ function renderRegisterProducts(){
       const qty = state.cart[p.id] || 0;
       const card = document.createElement('div');
       card.className = 'product-card';
+      const tapArea = p.photo
+        ? `<div class="product-photo-wrap" data-tap="${p.id}">
+             <img src="${p.photo}">
+             <div class="sticker" style="background:${p.color};"></div>
+             ${qty>0 ? `<div class="qty-badge">${qty}</div>` : ''}
+           </div>
+           <div class="product-name">${escapeHtml(p.name)}</div>`
+        : `<div class="product-tap-flat" data-tap="${p.id}">
+             <div class="sticker" style="background:${p.color};"></div>
+             ${qty>0 ? `<div class="qty-badge">${qty}</div>` : ''}
+             <div class="no-photo-label">${escapeHtml(p.name)}</div>
+           </div>`;
       card.innerHTML = `
-        <div class="product-photo-wrap" data-tap="${p.id}">
-          ${p.photo ? `<img src="${p.photo}">` : `<div class="thumb-placeholder">しゃしん なし</div>`}
-          <div class="sticker" style="background:${p.color};"></div>
-          ${qty>0 ? `<div class="qty-badge">${qty}</div>` : ''}
-        </div>
+        ${tapArea}
         <div class="price-tag">${yen(p.price)}</div>
-        <div class="product-name">${escapeHtml(p.name)}</div>
         <div class="stepper" style="justify-content:center;">
           <button type="button" data-dec="${p.id}">－</button>
           <input type="text" inputmode="numeric" data-qty="${p.id}" value="${qty}" style="width:56px;">
@@ -1232,10 +1322,17 @@ function renderCart(){
       const qty = state.cart[id];
       const row = document.createElement('div');
       row.className = 'cart-item';
-      row.innerHTML = `<span>${escapeHtml(p.name)} × ${qty}</span><span>${yen(p.price*qty)}</span>`;
+      row.innerHTML = `<span>${escapeHtml(p.name)} × ${qty}</span><span style="display:flex; align-items:center; gap:10px;">${yen(p.price*qty)}<button type="button" class="navbtn" data-remove-item="${id}" style="padding:6px 10px; font-size:13px; min-height:36px;">これを けす</button></span>`;
       list.appendChild(row);
     });
     document.getElementById(totalId).textContent = yen(total);
+    list.querySelectorAll('[data-remove-item]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        delete state.cart[btn.dataset.removeItem];
+        renderRegisterProducts();
+        renderCart();
+      });
+    });
   });
 }
 document.getElementById('btn-clear-cart').addEventListener('click', ()=>{ state.cart={}; renderRegisterProducts(); renderCart(); });
@@ -1287,9 +1384,10 @@ function scanQrFrame(){
   }
   requestAnimationFrame(scanQrFrame);
 }
+const QR_COOLDOWN_MS = 3000;
 function handleQrResult(text){
   const now = Date.now();
-  if(now - state.lastScanTime < 1200) return; // 連続読み取り防止
+  if(now - state.lastScanTime < QR_COOLDOWN_MS) return; // 連続読み取り防止（3秒）
   let data;
   try{ data = JSON.parse(text); }catch(e){ return; }
   if(!data || !data.name || typeof data.price !== 'number') return;
@@ -1305,14 +1403,18 @@ function handleQrResult(text){
   soundAdd();
   document.getElementById('qr-status').textContent = `「${data.name}」を いれたよ`;
   showToast(`「${data.name}」を かごに いれたよ`);
+  setTimeout(()=>{
+    if(state.qrScanning){
+      document.getElementById('qr-status').textContent = 'QRコードを カメラに みせてね';
+    }
+  }, QR_COOLDOWN_MS);
 }
 document.getElementById('btn-qr-start').addEventListener('click', startQrCamera);
 
 /* ===================== お会計画面 ===================== */
 function goCheckout(){
   if(Object.keys(state.cart).length === 0){ showToast('かごが からっぽだよ'); return; }
-  state.receivedAmount = 0;
-  document.getElementById('received-input').value = 0;
+  clearReceived();
   document.getElementById('checkout-total').textContent = yen(cartTotal());
   document.getElementById('change-result').innerHTML = '';
   document.getElementById('btn-next-customer').style.display = 'none';
@@ -1356,31 +1458,63 @@ function renderDenomGrid(){
     const btn = document.createElement('button');
     btn.className = 'denom-btn';
     btn.type = 'button';
-    btn.textContent = `${v.toLocaleString('ja-JP')}${v>=1000?'円さつ':'円'}`;
+    btn.textContent = `${v.toLocaleString('ja-JP')}円`;
     btn.addEventListener('click', ()=>{
-      state.receivedAmount += v;
-      document.getElementById('received-input').value = state.receivedAmount;
+      addReceived(v);
       soundTap();
     });
     grid.appendChild(btn);
   });
 }
-document.getElementById('received-input').addEventListener('change', (e)=>{
-  state.receivedAmount = Math.max(0, parseInt(e.target.value)||0);
-  e.target.value = state.receivedAmount;
-});
-document.getElementById('received-up').addEventListener('click', ()=>{
-  state.receivedAmount = Math.max(0, state.receivedAmount + 10);
+function renderKeypad(){
+  const grid = document.getElementById('keypad-grid');
+  grid.innerHTML = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','','0',''];
+  keys.forEach(k=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'keypad-btn';
+    btn.textContent = k;
+    if(k === ''){
+      btn.style.visibility = 'hidden';
+    }else{
+      btn.addEventListener('click', ()=>{ keypadDigit(k); soundTap(); });
+    }
+    grid.appendChild(btn);
+  });
+}
+function updateReceivedDisplay(){
+  document.getElementById('received-display').textContent = yen(state.receivedAmount);
   document.getElementById('received-input').value = state.receivedAmount;
-});
-document.getElementById('received-down').addEventListener('click', ()=>{
-  state.receivedAmount = Math.max(0, state.receivedAmount - 10);
-  document.getElementById('received-input').value = state.receivedAmount;
-});
-document.getElementById('btn-received-clear').addEventListener('click', ()=>{
+}
+function addReceived(v){
+  state.receivedHistory.push(state.receivedAmount);
+  state.receivedAmount += v;
+  updateReceivedDisplay();
+}
+function keypadDigit(d){
+  state.receivedHistory.push(state.receivedAmount);
+  const cur = state.receivedAmount === 0 ? '' : String(state.receivedAmount);
+  let next = cur + d;
+  if(next.length > 6) next = next.slice(0, 6);
+  state.receivedAmount = parseInt(next, 10) || 0;
+  updateReceivedDisplay();
+}
+function undoReceived(){
+  if(state.receivedHistory.length === 0){
+    state.receivedAmount = 0;
+  }else{
+    state.receivedAmount = state.receivedHistory.pop();
+  }
+  updateReceivedDisplay();
+}
+function clearReceived(){
+  state.receivedHistory = [];
   state.receivedAmount = 0;
-  document.getElementById('received-input').value = 0;
-});
+  updateReceivedDisplay();
+}
+document.getElementById('btn-received-undo').addEventListener('click', undoReceived);
+document.getElementById('btn-received-clear').addEventListener('click', clearReceived);
 
 function denomBreakdown(amount){
   let rest = amount;
@@ -1405,10 +1539,11 @@ document.getElementById('btn-calc').addEventListener('click', ()=>{
         <div class="small-note">もう いちど かくにんして、いれなおしてね</div>
       </div>`;
     document.getElementById('btn-next-customer').style.display = 'none';
+    resultEl.scrollIntoView({behavior:'smooth', block:'start'});
     return;
   }
   const change = received - total;
-  let html = `<div class="change-box ok"><div>おつり</div><div class="amount">${yen(change)}</div>`;
+  let html = `<div class="change-box ok"><div class="amount-sentence">おつり <span>${yen(change)}</span> です。<br>ありがとうございました</div>`;
   if(state.settings.changeLevel === 2 && change > 0){
     const bd = denomBreakdown(change);
     html += '<div class="denom-breakdown">';
@@ -1423,11 +1558,12 @@ document.getElementById('btn-calc').addEventListener('click', ()=>{
   resultEl.innerHTML = html;
   soundAdd();
   document.getElementById('btn-next-customer').style.display = 'block';
+  resultEl.scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 document.getElementById('btn-next-customer').addEventListener('click', ()=>{
   state.cart = {};
-  state.receivedAmount = 0;
+  clearReceived();
   renderRegisterProducts();
   renderCart();
   if(state.settings.inputMode === 'qr'){
@@ -1445,6 +1581,7 @@ function init(){
   renderRegisterProducts();
   renderCart();
   renderDenomGrid();
+  renderKeypad();
   if(!storageOk){
     showToast('※プレビュー環境では保存機能が動作しません');
   }
