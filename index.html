@@ -529,7 +529,25 @@ function yen(n){ return n.toLocaleString('ja-JP') + '円'; }
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(id !== 'screen-register-qr'){ stopQrCamera(); }
+
+  // レジ（QR）⇔お会計 の行き来では、カメラを止めずに維持する。
+  // それ以外（タイトルや設定など）に移動するときは、カメラを止める。
+  const keepCameraScreens = ['screen-register-qr', 'screen-checkout'];
+  if(!keepCameraScreens.includes(id)){
+    stopQrCamera();
+  }else if(state.qrStream){
+    if(id === 'screen-register-qr'){
+      // お会計から戻ってきた：読み取りを再開する
+      if(!state.qrScanning){
+        state.qrScanning = true;
+        document.getElementById('qr-status').textContent = 'QRコードを カメラに みせてね';
+        requestAnimationFrame(scanQrFrame);
+      }
+    }else{
+      // お会計中は、誤って読み取らないよう一時停止する（カメラ自体は止めない）
+      state.qrScanning = false;
+    }
+  }
 }
 
 /* ===================== 音（Web Audio） ===================== */
@@ -550,6 +568,19 @@ function beep(freq, dur){
 }
 function soundTap(){ beep(660, 0.12); }
 function soundAdd(){ beep(880, 0.15); }
+
+/* ===================== 音声読み上げ（Web Speech API） ===================== */
+function speakJa(text){
+  if(!state.settings.soundOn) return;
+  if(!('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel(); // 前の読み上げが残っていたら止めてから話す
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'ja-JP';
+    utter.rate = 1.0;
+    window.speechSynthesis.speak(utter);
+  }catch(e){ /* 読み上げに対応していない環境は無視 */ }
+}
 
 /* ===================== トースト ===================== */
 let toastTimer = null;
@@ -1434,6 +1465,7 @@ function handleQrResult(text){
   if(isSameAsLast){
     statusEl.textContent = 'おなじ しょうひんです';
     showToast('おなじ しょうひんです');
+    speakJa('おなじ しょうひんです');
   }else{
     statusEl.textContent = `「${data.name}」を いれたよ`;
     showToast(`「${data.name}」を かごに いれたよ`);
